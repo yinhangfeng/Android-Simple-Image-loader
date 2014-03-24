@@ -1,6 +1,6 @@
 package com.damingdan.lib.imageloader;
 
-public class LoadTask implements Runnable {
+public abstract class LoadImageTask implements Runnable {
 
 	@Override
 	public void run() {
