@@ -48,7 +48,7 @@ public class IoUtils {
 		}
 	}
 	
-	public static void StreamToFile(InputStream is, File file, CopyStreamListener listener) throws IOException {
+	public static void copyStreamToFile(InputStream is, File file, CopyStreamListener listener) throws IOException {
 		OutputStream os = new FileOutputStream(file);
 		if(listener == null) {
 			copyStreamAndClose(is, os, DEFAULT_BUFFER_SIZE);

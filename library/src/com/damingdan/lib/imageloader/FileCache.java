@@ -32,7 +32,9 @@ public class FileCache {
 
 	public File get(String key) {
 		File file = new File(cacheDir, getFileName(key));
-		file.setLastModified(System.currentTimeMillis());
+		if(file.exists()) {
+			file.setLastModified(System.currentTimeMillis());
+		}
 		return file;
 	}
 	
