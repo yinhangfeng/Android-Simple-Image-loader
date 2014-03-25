@@ -14,9 +14,11 @@ public class ImageLoader {
 	
 	private static volatile ImageLoader instance;
 	
+	/** 封装的线程池 可防止请求相同url的任务并发执行 */
 	private AntiRepeatTaskExecutor<String> executor = new AntiRepeatTaskExecutor<String>();
-	/** key=ImageView.hashCode() value=url 记录最后一次ImageView请求的url防止图片错位 */
-	private ConcurrentHashMap<Integer, String> taskForImageView = new ConcurrentHashMap<Integer, String>(32, 0.75f, 8);
+	/** key=ImageView.hashCode() value=url 记录某ImageView最后一次请求的url 防止图片错位 */
+	private ConcurrentHashMap<Integer, String> taskForImageView
+			= new ConcurrentHashMap<Integer, String>(32, 0.75f, 8);
 	/** 默认图片显示选项 */
 	private DisplayImageOptions defDisplayImageOptions = new DisplayImageOptions.Builder().build();
 	private MemoryCache memoryCache = new MemoryCache();
@@ -45,42 +47,99 @@ public class ImageLoader {
 		displayImage(url, imageView, defDisplayImageOptions, null, null);
 	}
 	
-	public void displayImage(String url, ImageView imageView, DisplayImageOptions options,
-			 ImageLoadingListener loadingListener, ImageLoadingProgressListener progressListener) {
+	public void displayImage(String url, ImageView imageView,
+			DisplayImageOptions displayImageOptions,
+			ImageLoadingListener loadingListener,
+			ImageLoadingProgressListener progressListener) {
 		if(DEBUG) Log.i(TAG, "displayImage url=" + url);
-		if(imageView == null || options == null) {
+		if(imageView == null || displayImageOptions == null) {
 			throw new NullPointerException();
 		}
 		if(TextUtils.isEmpty(url)) {
-			if(options.shouldShowImageOnFail()) {
-				imageView.setImageResource(options.getImageResOnFail());
+			if(DEBUG) Log.w(TAG, "displayImage TextUtils.isEmpty(url)");
+			if(loadingListener != null) {
+				loadingListener.onLoadingStarted(url, imageView);
+			}
+			if(displayImageOptions.shouldShowImageOnFail()) {
+				imageView.setImageResource(displayImageOptions.getImageResOnFail());
 			}
 			if(loadingListener != null) {
 				loadingListener.onLoadingFailed(url, imageView, null);
 			}
+			return;
 		}
 		if(loadingListener != null) {
 			loadingListener.onLoadingStarted(url, imageView);
 		}
+		taskForImageView.put(imageView.hashCode(), url);
 		Bitmap bitmap = memoryCache.get(url);
 		if(bitmap != null) {
+			if(DEBUG) Log.i(TAG, "displayImage bitmap in memoryCache");
 			imageView.setImageBitmap(bitmap);
 			if(loadingListener != null) {
 				loadingListener.onLoadingComplete(url, imageView, bitmap);
 			}
 		} else {
-		//TODO	LoadAndDisplayImageTask task = new LoadAndDisplayImageTask(url, );
+			LoadAndDisplayImageTask task = new LoadAndDisplayImageTask(url,
+					imageView, displayImageOptions, memoryCache, fileCache,
+					taskForImageView, loadingListener, progressListener);
+			executor.execute(url, task);
 		}
-		
 	}
 	
 	public void loadImage(String url, ImageLoadingListener listener) {
 		loadImage(url, defDisplayImageOptions, listener, null);
 	}
 	
-	public void loadImage(String url, DisplayImageOptions options,
-			  ImageLoadingListener loadingListener, ImageLoadingProgressListener progressListener) {
+	public void loadImage(String url, DisplayImageOptions displayImageOptions,
+			ImageLoadingListener loadingListener,
+			ImageLoadingProgressListener progressListener) {
 		if(DEBUG) Log.i(TAG, "loadImage url=" + url);
+		if(TextUtils.isEmpty(url) || displayImageOptions == null || loadingListener == null) {
+			throw new IllegalArgumentException();
+		}
+		loadingListener.onLoadingStarted(url, null);
+		Bitmap bitmap = memoryCache.get(url);
+		if(bitmap != null) {
+			if(DEBUG) Log.i(TAG, "loadImage bitmap in memoryCache");
+			loadingListener.onLoadingComplete(url, null, bitmap);
+		} else {
+			LoadImageTask task = new LoadImageTask(url, displayImageOptions,
+					memoryCache, fileCache, loadingListener, progressListener);
+			executor.execute(url, task);
+		}
+	}
+	
+	public MemoryCache getMemoryCache() {
+		return memoryCache;
+	}
+	
+	public FileCache getFileCache() {
+		return fileCache;
+	}
+	
+	public void putToCache(String url, File file, Bitmap bitmap) {
+    	if(DEBUG) Log.i(TAG, "putToCache url="+url);
+    	if(TextUtils.isEmpty(url)) {
+    		return;
+    	}
+//    	try {
+//			fileCache.store(url, new FileInputStream(file));
+//    	} catch(Exception e) {
+//    		Log.e(TAG, "putToCache fileCache.store error="+e);
+//    	}TODO
+    	if(bitmap != null) {
+    		memoryCache.put(url, bitmap);
+    	}
+    }
+	
+	public void logStatus() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("AntiRepeatTaskExecutor:\n").append(executor.toString())
+				.append("\ntaskForImageView.size:\n").append(taskForImageView.size())
+				.append("\nMemoryCache:\n").append(memoryCache.toString())
+				.append("\nFileCache:\n").append(fileCache.toString());
+		Log.i(TAG, sb.toString());
 	}
 
 }

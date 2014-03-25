@@ -28,16 +28,35 @@ public class ImageDecoder {
 	}
 
 	public Bitmap decode(File imageFile) throws IOException {
-		InputStream is = new FileInputStream(imageFile);
-		Options decodingOptions = prepareDecodingOptions(is);
-		if(DEBUG) Log.i(TAG, "decode inSampleSize=" + decodingOptions.inSampleSize); 
-		return BitmapFactory.decodeStream(is, null, decodingOptions);
+		Options decodingOptions = prepareDecodingOptions(imageFile);
+		if(DEBUG) Log.i(TAG, "decode inSampleSize=" + decodingOptions.inSampleSize);
+		InputStream is = null;
+		try {
+			is = new FileInputStream(imageFile);
+			return BitmapFactory.decodeStream(is, null, decodingOptions);
+		} finally {
+			if(is != null) {
+				try {
+					is.close();
+				} catch(IOException ig) {}
+			}
+		}
 	}
 	
-	private Options prepareDecodingOptions(InputStream is) {
+	private Options prepareDecodingOptions(File imageFile) throws IOException {
 		Options options = new Options();
-		options.inJustDecodeBounds = true;
-		BitmapFactory.decodeStream(is, null, options);
+		options.inJustDecodeBounds = true;;
+		InputStream is = null;
+		try {
+			is = new FileInputStream(imageFile);
+			BitmapFactory.decodeStream(is, null, options);
+		} finally {
+			if(is != null) {
+				try {
+					is.close();
+				} catch(IOException ig) {}
+			}
+		}
 		options.inSampleSize = computeImageSampleSize(options);
 		options.inJustDecodeBounds = false;
 		return options;
@@ -46,7 +65,11 @@ public class ImageDecoder {
 	private int computeImageSampleSize(Options options) {
 		int widthScale = (int) Math.ceil((float) options.outWidth / maxBitmapDimension);
 		int heightScale = (int) Math.ceil((float) options.outHeight / maxBitmapDimension);
-		return Math.max(widthScale, heightScale);
+		int inSampleSize = Math.max(widthScale, heightScale);
+		if(inSampleSize < 1) {
+			inSampleSize = 1;
+		}
+		return inSampleSize;
 	}
 
 }
