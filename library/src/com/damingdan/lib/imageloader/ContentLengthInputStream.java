@@ -15,7 +15,7 @@ public class ContentLengthInputStream extends InputStream {
 	}
 
 	@Override
-	public synchronized int available() {
+	public int available() {
 		return (int) (length - pos);
 	}
 
@@ -48,7 +48,7 @@ public class ContentLengthInputStream extends InputStream {
 	}
 
 	@Override
-	public synchronized void reset() throws IOException {
+	public void reset() throws IOException {
 		pos = 0;
 		in.reset();
 	}
