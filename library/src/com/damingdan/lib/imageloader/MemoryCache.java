@@ -10,13 +10,14 @@ import com.googlecode.concurrentlinkedhashmap.Weigher;
 public class MemoryCache implements EvictionListener<String, Bitmap>, Weigher<Bitmap> {
 	private static final String TAG = "BitmapLruCache";
 	private static final boolean DEBUG = true;
-	private static final long DEF_MAX_SIZE = Runtime.getRuntime().maxMemory() / 8;// 1/8 of available app memory
+	private static final long DEF_MAX_SIZE = Runtime.getRuntime().maxMemory() / 6;// 1/6 of available app memory
 	
 	private ConcurrentLinkedHashMap<String, Bitmap> cache;
 	private long maxSize;
 	
 	public MemoryCache() {
 		this(DEF_MAX_SIZE);
+		if(DEBUG) Log.i(TAG, "use DEF_MAX_SIZE=" + (DEF_MAX_SIZE / 1024f / 1024) + "MB");
 	}
 
 	public MemoryCache(long maxSize) {
@@ -62,7 +63,7 @@ public class MemoryCache implements EvictionListener<String, Bitmap>, Weigher<Bi
 
 	@Override
 	public String toString() {
-		return "MemoryCache [maxSize=" + maxSize + ", size=" + cache.size()
+		return "MemoryCache [maxSize=" + (maxSize / 1024f / 1024) + "MB, size=" + cache.size()
 				+ ", weightedSize=" + cache.weightedSize() + "BYPE "
 				+ (((float) cache.weightedSize()) / 1024 / 1024) + "MB ]";
 	}

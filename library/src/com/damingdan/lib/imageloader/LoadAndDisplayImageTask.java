@@ -5,7 +5,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import android.graphics.Bitmap;
 import android.util.Log;
-import android.view.View;
 import android.widget.ImageView;
 
 public class LoadAndDisplayImageTask extends LoadImageTask {
@@ -36,24 +35,78 @@ public class LoadAndDisplayImageTask extends LoadImageTask {
 			return true;
 		}
 		if(!url.equals(taskForImageView.get(ImageViewHashCode))) {
-			if(DEBUG) Log.i(TAG, "isTaskNotActual taskForImageView.get(ImageViewHashCode) != url");
+			if(DEBUG) Log.i(TAG, "isTaskNotActual !url.equals(taskForImageView.get(ImageViewHashCode))");
 			return true;
 		}
 		return false;
 	}
 	
-	@Override
-	protected View getView() {
-		return imageViewRef.get();
+	protected void onCancelled() {
+		if(loadingListener != null) {
+			handler.post(new Runnable() {
+
+				@Override
+				public void run() {
+					loadingListener.onLoadingCancelled(url, imageViewRef.get());
+				}
+				
+			});
+		}
 	}
 	
-	@Override
-	protected void displayImage(Bitmap bitmap) {
-		if(DEBUG) Log.i(TAG, "displayImage");
-		ImageView view = imageViewRef.get();
-		if(view != null) {
-			view.setImageBitmap(bitmap);
+	protected void onFailed(final Exception e) {
+		if(loadingListener != null || displayImageOptions.shouldShowImageOnFail()) {
+			handler.post(new Runnable() {
+
+				@Override
+				public void run() {
+					ImageView imageView = imageViewRef.get();
+					if(displayImageOptions.shouldShowImageOnFail() && !isTaskNotActual()) {
+						imageView.setImageResource(displayImageOptions.getImageResOnFail());
+					}
+					if(loadingListener != null) {
+						loadingListener.onLoadingFailed(url, imageView, e);
+					}
+				}
+				
+			});
 		}
+	}
+	
+	protected void onComplete(final Bitmap bm) {
+		handler.post(new Runnable() {
+
+			@Override
+			public void run() {
+				ImageView imageView = imageViewRef.get();
+				if (isTaskNotActual()) {
+					if (loadingListener != null) {
+						loadingListener.onLoadingCancelled(url, imageView);
+					}
+				} else {
+					imageView.setImageBitmap(bm);
+					if (loadingListener != null) {
+						loadingListener.onLoadingComplete(url, imageView, bm);
+					}
+				}
+			}
+
+		});
+	}
+
+	@Override
+	public void onBytesCopied(final int current, final int total) {
+		if(progressListener != null) {
+			handler.post(new Runnable() {
+
+				@Override
+				public void run() {
+					progressListener.onProgressUpdate(url, imageViewRef.get(), current, total);
+				}
+				
+			});
+		}
+		
 	}
 
 }

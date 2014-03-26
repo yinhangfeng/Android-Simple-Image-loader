@@ -4,13 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.damingdan.lib.imageloader.ImageDecoder.DecodeException;
 import com.damingdan.lib.imageloader.IoUtils.CopyStreamListener;
 
 import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.view.View;
 
 public class LoadImageTask implements Runnable, CopyStreamListener {
 	protected static final String TAG = "LoadImageTask";
@@ -53,18 +53,21 @@ public class LoadImageTask implements Runnable, CopyStreamListener {
 			}
 			onComplete(bitmap);
 		} catch(TaskCancelledException e) {
-			if(DEBUG) Log.i(TAG, "task cancelled url=" + url);
+			if(DEBUG) Log.w(TAG, "task cancelled url=" + url);
 			onCancelled();
+		} catch(DecodeException e) {
+			if(DEBUG) Log.e(TAG, "DecodeException url=" + url);
+			onFailed(e);
 		} catch(IOException e) {
-			if(DEBUG) Log.e(TAG, "IOException\n" + Log.getStackTraceString(e));
+			if(DEBUG) Log.e(TAG, "IOException\n" + e);//Log.getStackTraceString(e));
 			onFailed(e);
 		} catch(Exception e) {
-			if(DEBUG) Log.e(TAG, "Exception\n" + Log.getStackTraceString(e));
+			if(DEBUG) Log.e(TAG, "Exception\n" + e);//Log.getStackTraceString(e));
 			onFailed(e);
 		}
 	}
 	
-	private Bitmap loadBitmap() throws IOException, TaskCancelledException {
+	private Bitmap loadBitmap() throws IOException, TaskCancelledException, DecodeException {
 		if(DEBUG) Log.i(TAG, "loadBitmap url=" + url);
 		File imageFile = fileCache.get(url);
 		if(!imageFile.exists()) {
@@ -86,7 +89,7 @@ public class LoadImageTask implements Runnable, CopyStreamListener {
 		fileCache.put(url, imageFile);
 	}
 	
-	private Bitmap decodeAndCacheImage(File imageFile) throws IOException {
+	private Bitmap decodeAndCacheImage(File imageFile) throws IOException, DecodeException {
 		if(DEBUG) Log.i(TAG, "decodeAndCacheImage url=" + url);
 		Bitmap bitmap = imageDecoder.decode(imageFile);
 		if(displayImageOptions.isCacheInMemory()) {
@@ -108,52 +111,42 @@ public class LoadImageTask implements Runnable, CopyStreamListener {
 		return false;
 	}
 	
-	protected View getView() {
-		return null;
-	}
-	
-	protected void displayImage(Bitmap bitmap) {
-		
-	}
-	
-	private void onCancelled() {
+	protected void onCancelled() {
 		if(loadingListener != null) {
 			handler.post(new Runnable() {
 
 				@Override
 				public void run() {
-					loadingListener.onLoadingCancelled(url, getView());
+					loadingListener.onLoadingCancelled(url, null);
 				}
 				
 			});
 		}
 	}
 	
-	private void onFailed(final Exception e) {
+	protected void onFailed(final Exception e) {
 		if(loadingListener != null) {
 			handler.post(new Runnable() {
 
 				@Override
 				public void run() {
-					loadingListener.onLoadingFailed(url, getView(), e);
+					loadingListener.onLoadingFailed(url, null, e);
 				}
 				
 			});
 		}
 	}
 	
-	private void onComplete(final Bitmap bm) {
+	protected void onComplete(final Bitmap bm) {
 		if(loadingListener != null) {
 			handler.post(new Runnable() {
 
 				@Override
 				public void run() {
-					View v = getView();
 					if(isTaskNotActual()) {
-						loadingListener.onLoadingCancelled(url, v);
+						loadingListener.onLoadingCancelled(url, null);
 					} else {
-						displayImage(bm);
-						loadingListener.onLoadingComplete(url, v, bm);
+						loadingListener.onLoadingComplete(url, null, bm);
 					}
 				}
 				
@@ -168,7 +161,7 @@ public class LoadImageTask implements Runnable, CopyStreamListener {
 
 				@Override
 				public void run() {
-					progressListener.onProgressUpdate(url, getView(), current, total);
+					progressListener.onProgressUpdate(url, null, current, total);
 				}
 				
 			});

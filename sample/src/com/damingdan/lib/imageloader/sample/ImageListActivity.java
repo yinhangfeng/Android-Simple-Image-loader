@@ -1,5 +1,6 @@
 package com.damingdan.lib.imageloader.sample;
 
+import com.damingdan.lib.imageloader.DisplayImageOptions;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,20 +12,23 @@ import android.widget.TextView;
 
 public class ImageListActivity extends BaseActivity {
 
+	private String[] imageUrls = Constants.REPEAT_IMAGES;
 	private ListView listView;
-	private LayoutInflater inflater;
-	private String[] imageUrls;
+	private DisplayImageOptions options = new DisplayImageOptions.Builder()
+			.cacheInMemory(true).showImageOnLoading(R.drawable.ic_launcher)
+			.showImageOnFail(R.drawable.xxx).build();
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_image_list);
-		inflater = getLayoutInflater();
 		listView = (ListView) findViewById(android.R.id.list);
 		listView.setAdapter(new ItemAdapter());
 	}
 
 	class ItemAdapter extends BaseAdapter {
+		
+		private LayoutInflater inflater = getLayoutInflater();
 
 		private class Tag {
 			public TextView text;
@@ -58,9 +62,9 @@ public class ImageListActivity extends BaseActivity {
 			} else {
 				tag = (Tag) convertView.getTag();
 			}
-
-			tag.text.setText("Item " + (position + 1));
-
+			String url = imageUrls[position];
+			tag.text.setText("" + (position + 1) + " url " + url);
+			imageLoader.displayImage(url, tag.image, options, null, null);
 			return convertView;
 		}
 	}

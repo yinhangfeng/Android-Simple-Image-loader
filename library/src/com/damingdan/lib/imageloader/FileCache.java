@@ -3,11 +3,17 @@ package com.damingdan.lib.imageloader;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 
 import android.os.Process;
+import android.os.SystemClock;
+import android.util.Log;
 
 public class FileCache {
-	public static final long MAX_FILE_CACHE_SIZE = 1 * 1024 * 1024;
+	private static final String TAG = "FileCache";
+	private static final boolean DEBUG = true;
+	
+	public static final long MAX_FILE_CACHE_SIZE = 64 * 1024 * 1024;
 	private static final long CLEAN_TARGET_SIZE = MAX_FILE_CACHE_SIZE * 4 / 5;
 	private static final String INFO_FILE_NAME = ".clean_info";
 	private static final long CLEAN_INTERVAL = 1000 * 3600 * 24;
@@ -44,12 +50,15 @@ public class FileCache {
 	 */
 	public void cleanCache(boolean force) {
 		if(!force && !isNeedCheckClean()) {
+			if(DEBUG) Log.d(TAG, "cleanCache not clean");
 			return;
 		}
+		if(DEBUG) Log.d(TAG, "start cleanCache");
 		new Thread() {
 			@Override
 			public void run() {
 				Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+				if(DEBUG) Log.d(TAG, "cleanCache Thread started");
 				checkAndClean();
 				setNewCleanTime();
 			}
@@ -71,7 +80,10 @@ public class FileCache {
 	
 	private boolean isNeedCheckClean() {
 		File info = new File(cacheDir, INFO_FILE_NAME);
-		return System.currentTimeMillis() - info.lastModified() > CLEAN_INTERVAL;
+		long time = System.currentTimeMillis();
+		long lastModified = info.lastModified();
+		if(DEBUG) Log.i(TAG, "isNeedCheckClean time=" + time + " lastModified=" + lastModified);
+		return time - lastModified > CLEAN_INTERVAL;
 	}
 	
 	private void checkAndClean() {
@@ -86,6 +98,8 @@ public class FileCache {
 		if(totalSize < MAX_FILE_CACHE_SIZE) {
 			return;
 		}
+		if(DEBUG) Log.d(TAG, "checkAndClean start clean totalSize=" + totalSize + "BYTE " + (totalSize / 1024f / 1024) + "MB");
+		long start = SystemClock.elapsedRealtime();
 		int len = files.length;
 		long[][] modifiedData = new long[len][2];
 		for(int i = 0; i < len; ++i) {
@@ -105,6 +119,8 @@ public class FileCache {
 			totalSize -= file.length();
 			file.delete();
 		}
+		long end = SystemClock.elapsedRealtime();
+		if(DEBUG) Log.i(TAG, "checkAndClean time-consuming " + (end - start) + "ms");
 	}
 	
 	private void setNewCleanTime() {
@@ -118,4 +134,10 @@ public class FileCache {
 		info.setLastModified(System.currentTimeMillis());
 	}
 
+	@Override
+	public String toString() {
+		File info = new File(cacheDir, INFO_FILE_NAME);
+		String timeString = new Date(info.lastModified()).toString();
+		return "FileCache [file count: " + cacheDir.list().length + ", last check clean time=" + timeString + "]";
+	}
 }

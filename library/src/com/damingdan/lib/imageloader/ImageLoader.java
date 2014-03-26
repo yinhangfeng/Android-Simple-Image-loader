@@ -1,6 +1,7 @@
 package com.damingdan.lib.imageloader;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 
 import android.graphics.Bitmap;
@@ -62,6 +63,8 @@ public class ImageLoader {
 			}
 			if(displayImageOptions.shouldShowImageOnFail()) {
 				imageView.setImageResource(displayImageOptions.getImageResOnFail());
+			} else {
+				imageView.setImageDrawable(null);
 			}
 			if(loadingListener != null) {
 				loadingListener.onLoadingFailed(url, imageView, null);
@@ -80,6 +83,9 @@ public class ImageLoader {
 				loadingListener.onLoadingComplete(url, imageView, bitmap);
 			}
 		} else {
+			if(displayImageOptions.shouldShowImageOnLoading()) {
+				imageView.setImageResource(displayImageOptions.getImageResOnLoading());
+			}
 			LoadAndDisplayImageTask task = new LoadAndDisplayImageTask(url,
 					imageView, displayImageOptions, memoryCache, fileCache,
 					taskForImageView, loadingListener, progressListener);
@@ -123,12 +129,14 @@ public class ImageLoader {
     	if(TextUtils.isEmpty(url)) {
     		return;
     	}
-//    	try {
-//			fileCache.store(url, new FileInputStream(file));
-//    	} catch(Exception e) {
-//    		Log.e(TAG, "putToCache fileCache.store error="+e);
-//    	}TODO
-    	if(bitmap != null) {
+    	if(file != null && file.exists()) {
+    		try {
+    			IoUtils.copyFile(file, fileCache.get(url));
+    		} catch(IOException e) {
+    			if(DEBUG) Log.e(TAG, "putToCache copyFile error=" + e);
+    		}
+    	}
+    	if(bitmap != null && !bitmap.isRecycled()) {
     		memoryCache.put(url, bitmap);
     	}
     }
@@ -136,7 +144,7 @@ public class ImageLoader {
 	public void logStatus() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("AntiRepeatTaskExecutor:\n").append(executor.toString())
-				.append("\ntaskForImageView.size:\n").append(taskForImageView.size())
+				.append("\ntaskForImageView.size:").append(taskForImageView.size())
 				.append("\nMemoryCache:\n").append(memoryCache.toString())
 				.append("\nFileCache:\n").append(fileCache.toString());
 		Log.i(TAG, sb.toString());

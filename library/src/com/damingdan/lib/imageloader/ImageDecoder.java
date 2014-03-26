@@ -24,16 +24,20 @@ public class ImageDecoder {
 	static {
 		int[] maxTextureSize = new int[1];
 		GLES10.glGetIntegerv(GL10.GL_MAX_TEXTURE_SIZE, maxTextureSize, 0);
-		maxBitmapDimension = Math.max(maxTextureSize[0], DEFAULT_MAX_BITMAP_DIMENSION);
+		maxBitmapDimension = Math.min(Math.max(maxTextureSize[0], DEFAULT_MAX_BITMAP_DIMENSION), 4096);
+		if(DEBUG) Log.d(TAG, "maxBitmapDimension = " + maxBitmapDimension);
 	}
 
-	public Bitmap decode(File imageFile) throws IOException {
+	public Bitmap decode(File imageFile) throws IOException, DecodeException {
 		Options decodingOptions = prepareDecodingOptions(imageFile);
-		if(DEBUG) Log.i(TAG, "decode inSampleSize=" + decodingOptions.inSampleSize);
 		InputStream is = null;
 		try {
 			is = new FileInputStream(imageFile);
-			return BitmapFactory.decodeStream(is, null, decodingOptions);
+			Bitmap bitmap = BitmapFactory.decodeStream(is, null, decodingOptions);
+			if(bitmap == null) {
+				throw new DecodeException();
+			}
+			return bitmap;
 		} finally {
 			if(is != null) {
 				try {
@@ -68,8 +72,14 @@ public class ImageDecoder {
 		int inSampleSize = Math.max(widthScale, heightScale);
 		if(inSampleSize < 1) {
 			inSampleSize = 1;
+		} else if(DEBUG && inSampleSize > 1) {
+			Log.d(TAG, "computeImageSampleSize inSampleSize=" + inSampleSize);
 		}
 		return inSampleSize;
+	}
+	
+	public static class DecodeException extends Exception {
+		private static final long serialVersionUID = 1L;
 	}
 
 }

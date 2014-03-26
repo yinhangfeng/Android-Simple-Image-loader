@@ -1,5 +1,7 @@
 package com.damingdan.lib.imageloader.sample;
 
+import com.damingdan.lib.imageloader.ImageLoader;
+
 import android.app.Application;
 
 public class MyApplication extends Application {
@@ -11,6 +13,7 @@ public class MyApplication extends Application {
 		initImageLoader();
 	}
 
-	public static void initImageLoader() {
+	public void initImageLoader() {
+		ImageLoader.getInstance().init(getCacheDir());
 	}
 }

@@ -5,6 +5,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 
 public class IoUtils {
 	
@@ -54,6 +56,37 @@ public class IoUtils {
 			copyStreamAndClose(is, os, DEFAULT_BUFFER_SIZE);
 		} else {
 			copyStreamAndClose(is, os, listener, DEFAULT_BUFFER_SIZE);
+		}
+	}
+	
+	public static void copyFile(File from, File to) throws IOException {
+		if(from.equals(to)) {
+			return;
+		}
+		RandomAccessFile inFile = null;
+		RandomAccessFile outFile = null;
+		try {
+			inFile = new RandomAccessFile(from, "r");
+			outFile = new RandomAccessFile(to, "rw");
+			FileChannel inChannel = inFile.getChannel();
+			FileChannel outChannel = outFile.getChannel();
+			long pos = 0;
+			long toCopy = inFile.length();
+			while (toCopy > 0) {
+				long bytes = inChannel
+						.transferTo(pos, toCopy, outChannel);
+				pos += bytes;
+				toCopy -= bytes;
+			}
+		} finally {
+			if(inFile != null) {
+				try {
+					inFile.close();
+				} catch(IOException ig) {}
+			}
+			if(outFile != null) {
+				outFile.close();
+			}
 		}
 	}
 
