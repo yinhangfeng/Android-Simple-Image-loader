@@ -63,18 +63,18 @@ public class ImageLoader {
 			}
 			if(displayImageOptions.shouldShowImageOnFail()) {
 				imageView.setImageResource(displayImageOptions.getImageResOnFail());
-			} else {
-				imageView.setImageDrawable(null);
+			} else if(displayImageOptions.shouldShowImageOnLoading()) {
+				imageView.setImageResource(displayImageOptions.getImageResOnLoading());
 			}
 			if(loadingListener != null) {
 				loadingListener.onLoadingFailed(url, imageView, null);
 			}
 			return;
 		}
+		taskForImageView.put(imageView.hashCode(), url);
 		if(loadingListener != null) {
 			loadingListener.onLoadingStarted(url, imageView);
 		}
-		taskForImageView.put(imageView.hashCode(), url);
 		Bitmap bitmap = memoryCache.get(url);
 		if(bitmap != null) {
 			if(DEBUG) Log.i(TAG, "displayImage bitmap in memoryCache");
@@ -143,10 +143,12 @@ public class ImageLoader {
 	
 	public void logStatus() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("AntiRepeatTaskExecutor:\n").append(executor.toString())
+		sb.append("ImageLoader=============================================\n")
+				.append("AntiRepeatTaskExecutor:\n").append(executor.toString())
 				.append("\ntaskForImageView.size:").append(taskForImageView.size())
 				.append("\nMemoryCache:\n").append(memoryCache.toString())
-				.append("\nFileCache:\n").append(fileCache.toString());
+				.append("\nFileCache:\n").append(fileCache.toString())
+				.append("\n=============================================");
 		Log.i(TAG, sb.toString());
 	}
 

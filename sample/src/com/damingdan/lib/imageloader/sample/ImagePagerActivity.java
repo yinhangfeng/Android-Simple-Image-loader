@@ -79,8 +79,8 @@ public class ImagePagerActivity extends BaseActivity {
 
 				@Override
 				public void onProgressUpdate(String url, View view,
-						int current, int total) {
-					progressBar.setProgress((int) (((float) current / total) * 100));
+						int current, int total, float percent) {
+					progressBar.setProgress((int) (percent * 100));
 				}
 				
 			});

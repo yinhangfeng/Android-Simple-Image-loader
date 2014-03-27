@@ -61,8 +61,10 @@ public class LoadAndDisplayImageTask extends LoadImageTask {
 				@Override
 				public void run() {
 					ImageView imageView = imageViewRef.get();
-					if(displayImageOptions.shouldShowImageOnFail() && !isTaskNotActual()) {
-						imageView.setImageResource(displayImageOptions.getImageResOnFail());
+					if(!isTaskNotActual()) {
+						if(displayImageOptions.shouldShowImageOnFail()) {
+							imageView.setImageResource(displayImageOptions.getImageResOnFail());
+						}
 					}
 					if(loadingListener != null) {
 						loadingListener.onLoadingFailed(url, imageView, e);
@@ -97,11 +99,12 @@ public class LoadAndDisplayImageTask extends LoadImageTask {
 	@Override
 	public void onBytesCopied(final int current, final int total) {
 		if(progressListener != null) {
+			final float percent = current >= total ? 1f : ((float) current / total);
 			handler.post(new Runnable() {
 
 				@Override
 				public void run() {
-					progressListener.onProgressUpdate(url, imageViewRef.get(), current, total);
+					progressListener.onProgressUpdate(url, imageViewRef.get(), current, total, percent);
 				}
 				
 			});

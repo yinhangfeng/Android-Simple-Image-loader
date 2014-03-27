@@ -10,8 +10,8 @@ public class ImageDownloader {
 	private static final int HTTP_CONNECT_TIMEOUT = 5 * 1000;
 	private static final int HTTP_READ_TIMEOUT = 20 * 1000;
 	
-	public InputStream getStream(String imageUri) throws IOException {
-		HttpURLConnection conn = (HttpURLConnection) new URL(imageUri).openConnection();
+	public InputStream getStream(String imageUrl) throws IOException {
+		HttpURLConnection conn = (HttpURLConnection) new URL(imageUrl).openConnection();
 		conn.setConnectTimeout(HTTP_CONNECT_TIMEOUT);
 		conn.setReadTimeout(HTTP_READ_TIMEOUT);
 		InputStream is = conn.getInputStream();

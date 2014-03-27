@@ -43,10 +43,12 @@ public class LoadImageTask implements Runnable, CopyStreamListener {
 	@Override
 	public void run() {
 		if(DEBUG) Log.i(TAG, "task start url=" + url);
-		Bitmap bitmap;
+		if(isTaskNotActual()) {
+			onCancelled();
+			return;
+		}
 		try {
-			checkTaskNotActual();
-			bitmap = memoryCache.get(url);
+			Bitmap bitmap = memoryCache.get(url);
 			if(bitmap == null) {
 				bitmap = loadBitmap();
 				checkTaskNotActual();
@@ -62,7 +64,7 @@ public class LoadImageTask implements Runnable, CopyStreamListener {
 			if(DEBUG) Log.e(TAG, "IOException\n" + e);//Log.getStackTraceString(e));
 			onFailed(e);
 		} catch(Exception e) {
-			if(DEBUG) Log.e(TAG, "Exception\n" + e);//Log.getStackTraceString(e));
+			if(DEBUG) Log.e(TAG, "Exception\n" + Log.getStackTraceString(e));
 			onFailed(e);
 		}
 	}
@@ -157,11 +159,12 @@ public class LoadImageTask implements Runnable, CopyStreamListener {
 	@Override
 	public void onBytesCopied(final int current, final int total) {
 		if(progressListener != null) {
+			final float percent = current >= total ? 1f : ((float) current / total);
 			handler.post(new Runnable() {
 
 				@Override
 				public void run() {
-					progressListener.onProgressUpdate(url, null, current, total);
+					progressListener.onProgressUpdate(url, null, current, total, percent);
 				}
 				
 			});

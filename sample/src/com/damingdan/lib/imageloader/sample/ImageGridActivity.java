@@ -91,8 +91,8 @@ public class ImageGridActivity extends BaseActivity {
 
 				@Override
 				public void onProgressUpdate(String url, View view,
-						int current, int total) {
-					tag.progressBar.setProgress((int) (((float) current / total) * 100));
+						int current, int total, float percent) {
+					tag.progressBar.setProgress((int) (percent * 100));
 				}
 				
 			});
