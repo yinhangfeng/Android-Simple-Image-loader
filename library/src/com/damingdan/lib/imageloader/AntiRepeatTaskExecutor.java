@@ -68,35 +68,20 @@ public class AntiRepeatTaskExecutor<K> {
 		}
 		
 		/**
-		 * @return null 任务已结束 没有初始化repeatTaskQueue
-		 */
-		public LinkedList<Runnable> lazyGetRepeatTaskQueue() {
-			if(repeatTaskQueue == null) {
-				synchronized(this) {
-					if(isRunning && repeatTaskQueue == null) {
-						repeatTaskQueue = new LinkedList<Runnable>();
-					}
-				}
-			}
-			return repeatTaskQueue;
-		}
-		
-		/**
 		 * 添加重复任务
-		 * @return false 任务一结束 添加失败
+		 * @return false 任务已结束 添加失败
 		 */
 		public boolean addRepeatTask(Runnable task) {
 			if(DEBUG) Log.i(TAG, "addRepeatTask key=" + key);
 			if(!isRunning) {
 				return false;
 			}
-			LinkedList<Runnable> repeatTaskQueue = lazyGetRepeatTaskQueue();
-			if(repeatTaskQueue == null) {
-				return false;
-			}
 			synchronized(this) {
 				if(!isRunning) {
 					return false;
+				}
+				if(repeatTaskQueue == null) {
+					repeatTaskQueue = new LinkedList<Runnable>();
 				}
 				repeatTaskQueue.add(task);
 			}
