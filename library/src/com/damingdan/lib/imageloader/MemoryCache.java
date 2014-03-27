@@ -8,7 +8,7 @@ import com.googlecode.concurrentlinkedhashmap.EvictionListener;
 import com.googlecode.concurrentlinkedhashmap.Weigher;
 
 public class MemoryCache implements EvictionListener<String, Bitmap>, Weigher<Bitmap> {
-	private static final String TAG = "BitmapLruCache";
+	private static final String TAG = "MemoryCache";
 	private static final boolean DEBUG = true;
 	private static final long DEF_MAX_SIZE = Runtime.getRuntime().maxMemory() / 6;// 1/6 of available app memory
 	

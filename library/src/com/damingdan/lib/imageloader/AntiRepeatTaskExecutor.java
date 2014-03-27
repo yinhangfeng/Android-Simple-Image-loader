@@ -51,7 +51,6 @@ public class AntiRepeatTaskExecutor<K> {
 		private Runnable firstTask;
 		private volatile LinkedList<Runnable> repeatTaskQueue;
 		private volatile boolean isRunning = true;
-		private Object lock = new Object();
 		
 		public AntiRepeatTask(K key, Runnable firstTask) {
 			this.key = key;
@@ -73,7 +72,7 @@ public class AntiRepeatTaskExecutor<K> {
 		 */
 		public LinkedList<Runnable> lazyGetRepeatTaskQueue() {
 			if(repeatTaskQueue == null) {
-				synchronized(lock) {
+				synchronized(this) {
 					if(isRunning && repeatTaskQueue == null) {
 						repeatTaskQueue = new LinkedList<Runnable>();
 					}
@@ -88,11 +87,14 @@ public class AntiRepeatTaskExecutor<K> {
 		 */
 		public boolean addRepeatTask(Runnable task) {
 			if(DEBUG) Log.i(TAG, "addRepeatTask key=" + key);
+			if(!isRunning) {
+				return false;
+			}
 			LinkedList<Runnable> repeatTaskQueue = lazyGetRepeatTaskQueue();
 			if(repeatTaskQueue == null) {
 				return false;
 			}
-			synchronized(lock) {
+			synchronized(this) {
 				if(!isRunning) {
 					return false;
 				}
@@ -106,18 +108,20 @@ public class AntiRepeatTaskExecutor<K> {
 		 */
 		private void runRepeatTask() {
 			if(DEBUG) Log.i(TAG, "runRepeatTask");
-			synchronized(lock) {
-				if(repeatTaskQueue == null) {
-					isRunning = false;
-					removeSubmittedTasks(key, this);
-					return;
+			if(repeatTaskQueue == null) {
+				synchronized(this) {
+					if(repeatTaskQueue == null) {
+						isRunning = false;
+						removeSubmittedTasks(key, this);
+						return;
+					}
 				}
 			}
 			LinkedList<Runnable> repeatTaskQueue = this.repeatTaskQueue;
 			if(DEBUG) Log.i(TAG, "runRepeatTask repeatTaskQueue != null repeatTaskQueue.size=" + repeatTaskQueue.size());
 			Runnable repeatTask;
 			for(;;) {
-				synchronized(lock) {
+				synchronized(this) {
 					repeatTask = repeatTaskQueue.poll();
 					if(repeatTask == null) {
 						isRunning = false;

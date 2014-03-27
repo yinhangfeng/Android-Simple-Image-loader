@@ -52,7 +52,7 @@ public class ImageLoader {
 			DisplayImageOptions displayImageOptions,
 			ImageLoadingListener loadingListener,
 			ImageLoadingProgressListener progressListener) {
-		if(DEBUG) Log.i(TAG, "displayImage url=" + url);
+		//if(DEBUG) Log.i(TAG, "displayImage url=" + url);
 		if(imageView == null || displayImageOptions == null) {
 			throw new NullPointerException();
 		}
