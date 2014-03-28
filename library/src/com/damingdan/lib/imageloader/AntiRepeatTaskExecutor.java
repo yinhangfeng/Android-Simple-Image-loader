@@ -40,7 +40,7 @@ public class AntiRepeatTaskExecutor<K> {
 		@Override
 		protected void terminated() {
 			super.terminated();
-			if(DEBUG) Log.i(TAG, "terminated");
+			if(DEBUG) Log.w(TAG, "terminated");
 			AntiRepeatTaskExecutor.this.terminated();
 		}
 	}
