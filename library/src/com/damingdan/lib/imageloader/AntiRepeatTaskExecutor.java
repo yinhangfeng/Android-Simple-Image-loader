@@ -49,7 +49,7 @@ public class AntiRepeatTaskExecutor<K> {
 		
 		private K key;
 		private Runnable firstTask;
-		private volatile LinkedList<Runnable> repeatTaskQueue;
+		private LinkedList<Runnable> repeatTaskQueue;
 		private volatile boolean isRunning = true;
 		
 		public AntiRepeatTask(K key, Runnable firstTask) {
